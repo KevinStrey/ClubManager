@@ -8,47 +8,72 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
-    private static final String SERVER_ADDRESS = "localhost"; // Substitua por IP do servidor (ex.: "192.168.x.x") para acesso em rede
-    private static final int SERVER_PORT = 12345;
+    private static final String SERVER_ADDRESS = "127.0.0.1"; 
+    private static final int SERVER_PORT = 65000; 
 
     public static void main(String[] args) {
-        try (
-            Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            Scanner scanner = new Scanner(System.in)
-        ) {
-            System.out.println("Conectado ao servidor em " + SERVER_ADDRESS + ":" + SERVER_PORT);
-            String serverResponse;
-            while ((serverResponse = in.readLine()) != null) {
-                System.out.println(serverResponse);
-                if (serverResponse.startsWith("Escolha uma opção:") ||
-                    serverResponse.startsWith("Nome do Clube:") ||
-                    serverResponse.startsWith("Valor da Mensalidade:") ||
-                    serverResponse.startsWith("Novo Nome (Enter para manter):") ||
-                    serverResponse.startsWith("Novo Valor Mensalidade (0 para manter):") ||
-                    serverResponse.startsWith("CPF:") ||
-                    serverResponse.startsWith("Nome:") ||
-                    serverResponse.startsWith("Endereço:") ||
-                    serverResponse.startsWith("Matrícula:") ||
-                    serverResponse.startsWith("Plano: 1. MENSAL") ||
-                    serverResponse.startsWith("Novo CPF (Enter para manter):") ||
-                    serverResponse.startsWith("Novo Endereço (Enter para manter):") ||
-                    serverResponse.startsWith("Nova Matrícula (0 para manter):") ||
-                    serverResponse.startsWith("Novo Plano: 1. MENSAL") ||
-                    serverResponse.startsWith("CTPS:") ||
-                    serverResponse.startsWith("Salário:") ||
-                    serverResponse.startsWith("Nova CTPS (Enter para manter):") ||
-                    serverResponse.startsWith("Novo Salário (0 para manter):")) {
-                    String input = scanner.nextLine();
-                    out.println(input);
+        Scanner scan = new Scanner(System.in);
+        scan.useDelimiter("\n"); 
+        while (true) {
+            Socket socket = null;
+            BufferedReader in = null;
+            PrintWriter out = null;
+            try {
+                socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+                System.out.println("Conexão estabelecida com " + SERVER_ADDRESS + ":" + SERVER_PORT);
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                out = new PrintWriter(socket.getOutputStream(), true); // Autoflush, como MaquinaB
+                String serverResponse;
+                while ((serverResponse = in.readLine()) != null) {
+                    System.out.println(serverResponse);
+                    if (serverResponse.startsWith("Escolha uma opção:") ||
+                        serverResponse.startsWith("Nome do Clube:") ||
+                        serverResponse.startsWith("Valor da Mensalidade:") ||
+                        serverResponse.startsWith("CPF:") ||
+                        serverResponse.startsWith("Nome:") ||
+                        serverResponse.startsWith("Endereço:") ||
+                        serverResponse.startsWith("Matrícula:") ||
+                        serverResponse.startsWith("Plano:") ||
+                        serverResponse.startsWith("Escolha o plano:") ||
+                        serverResponse.startsWith("CTPS:") ||
+                        serverResponse.startsWith("Salário:") ||
+                        serverResponse.startsWith("Novo CPF") ||
+                        serverResponse.startsWith("Novo Nome") ||
+                        serverResponse.startsWith("Novo Endereço") ||
+                        serverResponse.startsWith("Nova Matrícula") ||
+                        serverResponse.startsWith("Novo Plano") ||
+                        serverResponse.startsWith("Nova CTPS") ||
+                        serverResponse.startsWith("Novo Salário")) {
+                        System.out.print("Digite: ");
+                        String input = scan.nextLine();
+                        out.println(input);
+                        if (input.equals("exit")) { // Suporta "exit" como MaquinaB
+                            break;
+                        }
+                    }
+                    if (serverResponse.equals("Desconectando...")) {
+                        break;
+                    }
                 }
-                if (serverResponse.equals("Desconectando...")) {
-                    break;
+            } catch (IOException e) {
+                System.err.println("Erro ao conectar: " + e.getMessage());
+            } finally {
+                try {
+                    if (in != null) in.close();
+                    if (out != null) out.close();
+                    if (socket != null && !socket.isClosed()) {
+                        socket.close();
+                        System.out.println("Socket encerrado.");
+                    }
+                } catch (IOException e) {
+                    System.err.println("Erro ao fechar conexão: " + e.getMessage());
                 }
             }
-        } catch (IOException e) {
-            System.err.println("Erro ao conectar ou comunicar com o servidor: " + e.getMessage());
+            System.out.println("Deseja reconectar? (s/n): ");
+            if (!scan.nextLine().equalsIgnoreCase("s")) {
+                break;
+            }
         }
+        scan.close();
     }
 }
