@@ -37,7 +37,10 @@ public class ClubeController {
         listarClubes(out);
         if (clubes.isEmpty()) return null;
         out.println("Escolha o número do clube (0 para cancelar): ");
+        
+        ////Ele fica travado aqui
         String input = in.readLine();
+        
         try {
             int idx = Integer.parseInt(input.trim());
             if (idx == 0) return null;
