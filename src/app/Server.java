@@ -6,7 +6,6 @@ import controller.FuncionarioController;
 import model.Clube;
 import model.Membro;
 import model.Funcionario;
-import model.Plano;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -218,8 +217,7 @@ public class Server {
                     String endereco = in.readLine();
                     out.println("Matrícula: ");
                     String matriculaStr = in.readLine();
-                    out.println("Plano: 1. MENSAL | 2. SEMESTRAL | 3. ANUAL");
-                    out.println("Escolha o plano: ");
+                    out.println("Escolha o Plano: 1. MENSAL | 2. SEMESTRAL | 3. ANUAL");
                     String planoStr = in.readLine();
                     try {
                         int matricula = Integer.parseInt(matriculaStr);
