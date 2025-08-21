@@ -6,6 +6,8 @@ import controller.FuncionarioController;
 import model.Clube;
 import model.Membro;
 import model.Funcionario;
+import validation.Validator;
+import validation.Validator.ValidationResult;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -90,6 +92,13 @@ public class Server {
                     out.println("Desconectando...");
                     break;
                 }
+                
+                ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 4);
+                if (!opcaoResult.isValid()) {
+                    out.println("Erro: " + opcaoResult.getMessage());
+                    continue;
+                }
+                
                 switch (input.trim()) {
                     case "1":
                         gerenciarClubes(in, out);
@@ -137,18 +146,37 @@ public class Server {
             out.println("Desconectando...");
             return;
         }
+        
+        ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 7);
+        if (!opcaoResult.isValid()) {
+            out.println("Erro: " + opcaoResult.getMessage());
+            return;
+        }
+        
         switch (input.trim()) {
             case "1":
                 out.println("Nome do Clube: ");
                 String nome = in.readLine();
+                ValidationResult nomeResult = Validator.validarNomeClube(nome);
+                if (!nomeResult.isValid()) {
+                    out.println("Erro: " + nomeResult.getMessage());
+                    break;
+                }
+                
                 out.println("Valor da Mensalidade: ");
                 String valorStr = in.readLine();
+                ValidationResult valorResult = Validator.validarValorMonetario(valorStr);
+                if (!valorResult.isValid()) {
+                    out.println("Erro: " + valorResult.getMessage());
+                    break;
+                }
+                
                 try {
                     double valor = Double.parseDouble(valorStr);
                     clubeController.criarClube(nome, valor);
                     out.println("Clube criado com sucesso.");
                 } catch (NumberFormatException e) {
-                    out.println("Valor inválido para mensalidade.");
+                    out.println("Erro interno: Valor inválido para mensalidade.");
                 }
                 break;
             case "2":
@@ -159,11 +187,31 @@ public class Server {
                 if (clube != null) {
                     out.println("Novo Nome (Enter para manter): ");
                     String novoNome = in.readLine();
+                    if (!novoNome.trim().isEmpty()) {
+                        ValidationResult novoNomeResult = Validator.validarNomeClube(novoNome);
+                        if (!novoNomeResult.isValid()) {
+                            out.println("Erro: " + novoNomeResult.getMessage());
+                            break;
+                        }
+                    }
+                    
                     out.println("Novo Valor Mensalidade (0 para manter): ");
                     String novoValorStr = in.readLine();
-                    double novoValor = novoValorStr.isEmpty() ? 0 : Double.parseDouble(novoValorStr);
-                    clubeController.atualizarClube(clube, novoNome, novoValor);
-                    out.println("Clube atualizado com sucesso.");
+                    if (!novoValorStr.trim().isEmpty()) {
+                        ValidationResult novoValorResult = Validator.validarValorMonetario(novoValorStr);
+                        if (!novoValorResult.isValid()) {
+                            out.println("Erro: " + novoValorResult.getMessage());
+                            break;
+                        }
+                    }
+                    
+                    try {
+                        double novoValor = novoValorStr.isEmpty() ? 0 : Double.parseDouble(novoValorStr);
+                        clubeController.atualizarClube(clube, novoNome, novoValor);
+                        out.println("Clube atualizado com sucesso.");
+                    } catch (NumberFormatException e) {
+                        out.println("Erro interno: Valor inválido para mensalidade.");
+                    }
                 }
                 break;
             case "4":
@@ -205,26 +253,63 @@ public class Server {
             out.println("Desconectando...");
             return;
         }
+        
+        ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 5);
+        if (!opcaoResult.isValid()) {
+            out.println("Erro: " + opcaoResult.getMessage());
+            return;
+        }
+        
         switch (input.trim()) {
             case "1":
                 Clube clube = clubeController.escolherClube(out, in);
                 if (clube != null) {
                     out.println("CPF: ");
                     String cpf = in.readLine();
+                    ValidationResult cpfResult = Validator.validarCPF(cpf);
+                    if (!cpfResult.isValid()) {
+                        out.println("Erro: " + cpfResult.getMessage());
+                        break;
+                    }
+                    
                     out.println("Nome: ");
                     String nome = in.readLine();
+                    ValidationResult nomeResult = Validator.validarNome(nome);
+                    if (!nomeResult.isValid()) {
+                        out.println("Erro: " + nomeResult.getMessage());
+                        break;
+                    }
+                    
                     out.println("Endereço: ");
                     String endereco = in.readLine();
+                    ValidationResult enderecoResult = Validator.validarEndereco(endereco);
+                    if (!enderecoResult.isValid()) {
+                        out.println("Erro: " + enderecoResult.getMessage());
+                        break;
+                    }
+                    
                     out.println("Matrícula: ");
                     String matriculaStr = in.readLine();
+                    ValidationResult matriculaResult = Validator.validarMatricula(matriculaStr);
+                    if (!matriculaResult.isValid()) {
+                        out.println("Erro: " + matriculaResult.getMessage());
+                        break;
+                    }
+                    
                     out.println("Escolha o Plano: 1. MENSAL | 2. SEMESTRAL | 3. ANUAL");
                     String planoStr = in.readLine();
+                    ValidationResult planoResult = Validator.validarPlano(planoStr);
+                    if (!planoResult.isValid()) {
+                        out.println("Erro: " + planoResult.getMessage());
+                        break;
+                    }
+                    
                     try {
                         int matricula = Integer.parseInt(matriculaStr);
                         int planoOpcao = Integer.parseInt(planoStr);
                         membroController.criarMembro(clube, cpf, nome, endereco, matricula, planoOpcao, out);
                     } catch (NumberFormatException e) {
-                        out.println("Entrada inválida para matrícula ou plano.");
+                        out.println("Erro interno: Entrada inválida para matrícula ou plano.");
                     }
                 }
                 break;
@@ -238,22 +323,62 @@ public class Server {
                     if (membro != null) {
                         out.println("Novo CPF (Enter para manter): ");
                         String cpf = in.readLine();
+                        if (!cpf.trim().isEmpty()) {
+                            ValidationResult cpfResult = Validator.validarCPF(cpf);
+                            if (!cpfResult.isValid()) {
+                                out.println("Erro: " + cpfResult.getMessage());
+                                break;
+                            }
+                        }
+                        
                         out.println("Novo Nome (Enter para manter): ");
                         String nome = in.readLine();
+                        if (!nome.trim().isEmpty()) {
+                            ValidationResult nomeResult = Validator.validarNome(nome);
+                            if (!nomeResult.isValid()) {
+                                out.println("Erro: " + nomeResult.getMessage());
+                                break;
+                            }
+                        }
+                        
                         out.println("Novo Endereço (Enter para manter): ");
                         String endereco = in.readLine();
+                        if (!endereco.trim().isEmpty()) {
+                            ValidationResult enderecoResult = Validator.validarEndereco(endereco);
+                            if (!enderecoResult.isValid()) {
+                                out.println("Erro: " + enderecoResult.getMessage());
+                                break;
+                            }
+                        }
+                        
                         out.println("Nova Matrícula (0 para manter): ");
                         String matriculaStr = in.readLine();
+                        if (!matriculaStr.trim().isEmpty()) {
+                            ValidationResult matriculaResult = Validator.validarMatricula(matriculaStr);
+                            if (!matriculaResult.isValid()) {
+                                out.println("Erro: " + matriculaResult.getMessage());
+                                break;
+                            }
+                        }
+                        
                         out.println("Novo Plano: 1. MENSAL | 2. SEMESTRAL | 3. ANUAL | 0 para manter");
                         out.println("Escolha o plano: ");
                         String planoStr = in.readLine();
+                        if (!planoStr.trim().isEmpty()) {
+                            ValidationResult planoResult = Validator.validarPlano(planoStr);
+                            if (!planoResult.isValid()) {
+                                out.println("Erro: " + planoResult.getMessage());
+                                break;
+                            }
+                        }
+                        
                         try {
                             int matricula = matriculaStr.isEmpty() ? 0 : Integer.parseInt(matriculaStr);
                             int planoOpcao = planoStr.isEmpty() ? 0 : Integer.parseInt(planoStr);
                             membroController.atualizarMembro(membro, cpf, nome, endereco, matricula, planoOpcao);
                             out.println("Membro atualizado com sucesso.");
                         } catch (NumberFormatException e) {
-                            out.println("Entrada inválida para matrícula ou plano.");
+                            out.println("Erro interno: Entrada inválida para matrícula ou plano.");
                         }
                     }
                 }
@@ -288,26 +413,63 @@ public class Server {
             out.println("Desconectando...");
             return;
         }
+        
+        ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 5);
+        if (!opcaoResult.isValid()) {
+            out.println("Erro: " + opcaoResult.getMessage());
+            return;
+        }
+        
         switch (input.trim()) {
             case "1":
                 Clube clube = clubeController.escolherClube(out, in);
                 if (clube != null) {
                     out.println("CPF: ");
                     String cpf = in.readLine();
+                    ValidationResult cpfResult = Validator.validarCPF(cpf);
+                    if (!cpfResult.isValid()) {
+                        out.println("Erro: " + cpfResult.getMessage());
+                        break;
+                    }
+                    
                     out.println("Nome: ");
                     String nome = in.readLine();
+                    ValidationResult nomeResult = Validator.validarNome(nome);
+                    if (!nomeResult.isValid()) {
+                        out.println("Erro: " + nomeResult.getMessage());
+                        break;
+                    }
+                    
                     out.println("Endereço: ");
                     String endereco = in.readLine();
+                    ValidationResult enderecoResult = Validator.validarEndereco(endereco);
+                    if (!enderecoResult.isValid()) {
+                        out.println("Erro: " + enderecoResult.getMessage());
+                        break;
+                    }
+                    
                     out.println("CTPS: ");
                     String ctps = in.readLine();
+                    ValidationResult ctpsResult = Validator.validarCTPS(ctps);
+                    if (!ctpsResult.isValid()) {
+                        out.println("Erro: " + ctpsResult.getMessage());
+                        break;
+                    }
+                    
                     out.println("Salário: ");
                     String salarioStr = in.readLine();
+                    ValidationResult salarioResult = Validator.validarValorMonetario(salarioStr);
+                    if (!salarioResult.isValid()) {
+                        out.println("Erro: " + salarioResult.getMessage());
+                        break;
+                    }
+                    
                     try {
                         double salario = Double.parseDouble(salarioStr);
                         funcionarioController.criarFuncionario(clube, cpf, nome, endereco, ctps, salario);
                         out.println("Funcionario criado com sucesso.");
                     } catch (NumberFormatException e) {
-                        out.println("Entrada inválida para salário.");
+                        out.println("Erro interno: Entrada inválida para salário.");
                     }
                 }
                 break;
@@ -321,20 +483,60 @@ public class Server {
                     if (funcionario != null) {
                         out.println("Novo CPF (Enter para manter): ");
                         String cpf = in.readLine();
+                        if (!cpf.trim().isEmpty()) {
+                            ValidationResult cpfResult = Validator.validarCPF(cpf);
+                            if (!cpfResult.isValid()) {
+                                out.println("Erro: " + cpfResult.getMessage());
+                                break;
+                            }
+                        }
+                        
                         out.println("Novo Nome (Enter para manter): ");
                         String nome = in.readLine();
+                        if (!nome.trim().isEmpty()) {
+                            ValidationResult nomeResult = Validator.validarNome(nome);
+                            if (!nomeResult.isValid()) {
+                                out.println("Erro: " + nomeResult.getMessage());
+                                break;
+                            }
+                        }
+                        
                         out.println("Novo Endereço (Enter para manter): ");
                         String endereco = in.readLine();
+                        if (!endereco.trim().isEmpty()) {
+                            ValidationResult enderecoResult = Validator.validarEndereco(endereco);
+                            if (!enderecoResult.isValid()) {
+                                out.println("Erro: " + enderecoResult.getMessage());
+                                break;
+                            }
+                        }
+                        
                         out.println("Nova CTPS (Enter para manter): ");
                         String ctps = in.readLine();
+                        if (!ctps.trim().isEmpty()) {
+                            ValidationResult ctpsResult = Validator.validarCTPS(ctps);
+                            if (!ctpsResult.isValid()) {
+                                out.println("Erro: " + ctpsResult.getMessage());
+                                break;
+                            }
+                        }
+                        
                         out.println("Novo Salário (0 para manter): ");
                         String salarioStr = in.readLine();
+                        if (!salarioStr.trim().isEmpty()) {
+                            ValidationResult salarioResult = Validator.validarValorMonetario(salarioStr);
+                            if (!salarioResult.isValid()) {
+                                out.println("Erro: " + salarioResult.getMessage());
+                                break;
+                            }
+                        }
+                        
                         try {
                             double salario = salarioStr.isEmpty() ? 0 : Double.parseDouble(salarioStr);
                             funcionarioController.atualizarFuncionario(funcionario, cpf, nome, endereco, ctps, salario);
                             out.println("Funcionario atualizado com sucesso.");
                         } catch (NumberFormatException e) {
-                            out.println("Entrada inválida para salário.");
+                            out.println("Erro interno: Entrada inválida para salário.");
                         }
                     }
                 }
