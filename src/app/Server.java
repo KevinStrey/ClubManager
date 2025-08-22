@@ -16,7 +16,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Server {
-    private static final int PORT = 65000; 
+    private static final int PORT = 65000;
     private final ClubeController clubeController;
     private final MembroController membroController;
     private final FuncionarioController funcionarioController;
@@ -36,7 +36,7 @@ public class Server {
         ServerSocket serverSocket = null;
         try {
             serverSocket = new ServerSocket(PORT);
-            serverSocket.setReuseAddress(true); // Alinhado com MaquinaA
+            serverSocket.setReuseAddress(true);
             System.out.println("Servidor iniciado na porta " + PORT);
             while (true) {
                 Socket clientSocket = null;
@@ -77,7 +77,7 @@ public class Server {
         PrintWriter out = null;
         try {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            out = new PrintWriter(clientSocket.getOutputStream(), true); // Autoflush, como MaquinaA
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
             out.println("Bem-vindo ao Sistema de Gerenciamento de Clubes!");
             boolean running = true;
             while (running) {
@@ -88,17 +88,18 @@ public class Server {
                 out.println("4. Sair");
                 out.println("Escolha uma opção: ");
                 String input = in.readLine();
-                if (input == null || input.trim().equals("exit")) { // Suporta "exit" como MaquinaA
+                if (input == null || input.trim().equals("exit")) {
                     out.println("Desconectando...");
+                    running = false;
                     break;
                 }
-                
+
                 ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 4);
                 if (!opcaoResult.isValid()) {
                     out.println("Erro: " + opcaoResult.getMessage());
                     continue;
                 }
-                
+
                 switch (input.trim()) {
                     case "1":
                         gerenciarClubes(in, out);
@@ -116,15 +117,15 @@ public class Server {
                     default:
                         out.println("Opção inválida.");
                 }
-                // Fecha conexão após cada operação, conforme padrão de conexões não ociosas
-                break; // Sai do loop após uma operação, como MaquinaA
             }
         } catch (IOException e) {
             System.err.println("Erro ao lidar com cliente: " + e.getMessage());
         } finally {
             try {
-                if (in != null) in.close();
-                if (out != null) out.close();
+                if (in != null)
+                    in.close();
+                if (out != null)
+                    out.close();
             } catch (IOException e) {
                 System.err.println("Erro ao fechar streams: " + e.getMessage());
             }
@@ -140,37 +141,45 @@ public class Server {
         out.println("5. Listar Membros de um Clube");
         out.println("6. Listar Funcionários de um Clube");
         out.println("7. Voltar");
-        out.println("Escolha uma opção: ");
-        String input = in.readLine();
-        if (input == null || input.trim().equals("exit")) {
-            out.println("Desconectando...");
-            return;
+        String input = null;
+        while (true) {
+            out.println("Escolha uma opção: ");
+            input = in.readLine();
+            if (input == null || input.trim().equals("exit")) {
+                out.println("Desconectando...");
+                return;
+            }
+            ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 7);
+            if (!opcaoResult.isValid()) {
+                out.println("Erro: " + opcaoResult.getMessage());
+            } else {
+                break;
+            }
         }
-        
-        ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 7);
-        if (!opcaoResult.isValid()) {
-            out.println("Erro: " + opcaoResult.getMessage());
-            return;
-        }
-        
         switch (input.trim()) {
-            case "1":
-                out.println("Nome do Clube: ");
-                String nome = in.readLine();
-                ValidationResult nomeResult = Validator.validarNomeClube(nome);
-                if (!nomeResult.isValid()) {
-                    out.println("Erro: " + nomeResult.getMessage());
-                    break;
+            case "1": {
+                String nome = null;
+                while (true) {
+                    out.println("Nome do Clube: ");
+                    nome = in.readLine();
+                    ValidationResult nomeResult = Validator.validarNomeClube(nome);
+                    if (!nomeResult.isValid()) {
+                        out.println("Erro: " + nomeResult.getMessage());
+                    } else {
+                        break;
+                    }
                 }
-                
-                out.println("Valor da Mensalidade: ");
-                String valorStr = in.readLine();
-                ValidationResult valorResult = Validator.validarValorMonetario(valorStr);
-                if (!valorResult.isValid()) {
-                    out.println("Erro: " + valorResult.getMessage());
-                    break;
+                String valorStr = null;
+                while (true) {
+                    out.println("Valor da Mensalidade: ");
+                    valorStr = in.readLine();
+                    ValidationResult valorResult = Validator.validarValorMonetario(valorStr);
+                    if (!valorResult.isValid()) {
+                        out.println("Erro: " + valorResult.getMessage());
+                    } else {
+                        break;
+                    }
                 }
-                
                 try {
                     double valor = Double.parseDouble(valorStr);
                     clubeController.criarClube(nome, valor);
@@ -179,6 +188,7 @@ public class Server {
                     out.println("Erro interno: Valor inválido para mensalidade.");
                 }
                 break;
+            }
             case "2":
                 clubeController.listarClubes(out);
                 break;
@@ -194,7 +204,7 @@ public class Server {
                             break;
                         }
                     }
-                    
+
                     out.println("Novo Valor Mensalidade (0 para manter): ");
                     String novoValorStr = in.readLine();
                     if (!novoValorStr.trim().isEmpty()) {
@@ -204,7 +214,7 @@ public class Server {
                             break;
                         }
                     }
-                    
+
                     try {
                         double novoValor = novoValorStr.isEmpty() ? 0 : Double.parseDouble(novoValorStr);
                         clubeController.atualizarClube(clube, novoNome, novoValor);
@@ -247,63 +257,81 @@ public class Server {
         out.println("3. Atualizar Membro");
         out.println("4. Deletar Membro");
         out.println("5. Voltar");
-        out.println("Escolha uma opção: ");
-        String input = in.readLine();
-        if (input == null || input.trim().equals("exit")) {
-            out.println("Desconectando...");
-            return;
+        String input = null;
+        while (true) {
+            out.println("Escolha uma opção: ");
+            input = in.readLine();
+            if (input == null || input.trim().equals("exit")) {
+                out.println("Desconectando...");
+                return;
+            }
+            ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 5);
+            if (!opcaoResult.isValid()) {
+                out.println("Erro: " + opcaoResult.getMessage());
+            } else {
+                break;
+            }
         }
-        
-        ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 5);
-        if (!opcaoResult.isValid()) {
-            out.println("Erro: " + opcaoResult.getMessage());
-            return;
-        }
-        
+        Clube clube = null;
         switch (input.trim()) {
-            case "1":
-                Clube clube = clubeController.escolherClube(out, in);
+            case "1": {
+                clube = clubeController.escolherClube(out, in);
                 if (clube != null) {
-                    out.println("CPF: ");
-                    String cpf = in.readLine();
-                    ValidationResult cpfResult = Validator.validarCPF(cpf);
-                    if (!cpfResult.isValid()) {
-                        out.println("Erro: " + cpfResult.getMessage());
-                        break;
+                    String cpf = null;
+                    while (true) {
+                        out.println("CPF: ");
+                        cpf = in.readLine();
+                        ValidationResult cpfResult = Validator.validarCPF(cpf);
+                        if (!cpfResult.isValid()) {
+                            out.println("Erro: " + cpfResult.getMessage());
+                        } else {
+                            break;
+                        }
                     }
-                    
-                    out.println("Nome: ");
-                    String nome = in.readLine();
-                    ValidationResult nomeResult = Validator.validarNome(nome);
-                    if (!nomeResult.isValid()) {
-                        out.println("Erro: " + nomeResult.getMessage());
-                        break;
+                    String nome = null;
+                    while (true) {
+                        out.println("Nome: ");
+                        nome = in.readLine();
+                        ValidationResult nomeResult = Validator.validarNome(nome);
+                        if (!nomeResult.isValid()) {
+                            out.println("Erro: " + nomeResult.getMessage());
+                        } else {
+                            break;
+                        }
                     }
-                    
-                    out.println("Endereço: ");
-                    String endereco = in.readLine();
-                    ValidationResult enderecoResult = Validator.validarEndereco(endereco);
-                    if (!enderecoResult.isValid()) {
-                        out.println("Erro: " + enderecoResult.getMessage());
-                        break;
+                    String endereco = null;
+                    while (true) {
+                        out.println("Endereço: ");
+                        endereco = in.readLine();
+                        ValidationResult enderecoResult = Validator.validarEndereco(endereco);
+                        if (!enderecoResult.isValid()) {
+                            out.println("Erro: " + enderecoResult.getMessage());
+                        } else {
+                            break;
+                        }
                     }
-                    
-                    out.println("Matrícula: ");
-                    String matriculaStr = in.readLine();
-                    ValidationResult matriculaResult = Validator.validarMatricula(matriculaStr);
-                    if (!matriculaResult.isValid()) {
-                        out.println("Erro: " + matriculaResult.getMessage());
-                        break;
+                    String matriculaStr = null;
+                    while (true) {
+                        out.println("Matrícula: ");
+                        matriculaStr = in.readLine();
+                        ValidationResult matriculaResult = Validator.validarMatricula(matriculaStr);
+                        if (!matriculaResult.isValid()) {
+                            out.println("Erro: " + matriculaResult.getMessage());
+                        } else {
+                            break;
+                        }
                     }
-                    
-                    out.println("Escolha o Plano: 1. MENSAL | 2. SEMESTRAL | 3. ANUAL");
-                    String planoStr = in.readLine();
-                    ValidationResult planoResult = Validator.validarPlano(planoStr);
-                    if (!planoResult.isValid()) {
-                        out.println("Erro: " + planoResult.getMessage());
-                        break;
+                    String planoStr = null;
+                    while (true) {
+                        out.println("Escolha o Plano: 1. MENSAL | 2. SEMESTRAL | 3. ANUAL");
+                        planoStr = in.readLine();
+                        ValidationResult planoResult = Validator.validarPlano(planoStr);
+                        if (!planoResult.isValid()) {
+                            out.println("Erro: " + planoResult.getMessage());
+                        } else {
+                            break;
+                        }
                     }
-                    
                     try {
                         int matricula = Integer.parseInt(matriculaStr);
                         int planoOpcao = Integer.parseInt(planoStr);
@@ -313,6 +341,7 @@ public class Server {
                     }
                 }
                 break;
+            }
             case "2":
                 membroController.listarTodosMembros(out);
                 break;
@@ -330,7 +359,7 @@ public class Server {
                                 break;
                             }
                         }
-                        
+
                         out.println("Novo Nome (Enter para manter): ");
                         String nome = in.readLine();
                         if (!nome.trim().isEmpty()) {
@@ -340,7 +369,7 @@ public class Server {
                                 break;
                             }
                         }
-                        
+
                         out.println("Novo Endereço (Enter para manter): ");
                         String endereco = in.readLine();
                         if (!endereco.trim().isEmpty()) {
@@ -350,7 +379,7 @@ public class Server {
                                 break;
                             }
                         }
-                        
+
                         out.println("Nova Matrícula (0 para manter): ");
                         String matriculaStr = in.readLine();
                         if (!matriculaStr.trim().isEmpty()) {
@@ -360,7 +389,7 @@ public class Server {
                                 break;
                             }
                         }
-                        
+
                         out.println("Novo Plano: 1. MENSAL | 2. SEMESTRAL | 3. ANUAL | 0 para manter");
                         out.println("Escolha o plano: ");
                         String planoStr = in.readLine();
@@ -371,7 +400,7 @@ public class Server {
                                 break;
                             }
                         }
-                        
+
                         try {
                             int matricula = matriculaStr.isEmpty() ? 0 : Integer.parseInt(matriculaStr);
                             int planoOpcao = planoStr.isEmpty() ? 0 : Integer.parseInt(planoStr);
@@ -407,63 +436,81 @@ public class Server {
         out.println("3. Atualizar Funcionario");
         out.println("4. Deletar Funcionario");
         out.println("5. Voltar");
-        out.println("Escolha uma opção: ");
-        String input = in.readLine();
-        if (input == null || input.trim().equals("exit")) {
-            out.println("Desconectando...");
-            return;
+        String input = null;
+        while (true) {
+            out.println("Escolha uma opção: ");
+            input = in.readLine();
+            if (input == null || input.trim().equals("exit")) {
+                out.println("Desconectando...");
+                return;
+            }
+            ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 5);
+            if (!opcaoResult.isValid()) {
+                out.println("Erro: " + opcaoResult.getMessage());
+            } else {
+                break;
+            }
         }
-        
-        ValidationResult opcaoResult = Validator.validarOpcaoMenu(input, 5);
-        if (!opcaoResult.isValid()) {
-            out.println("Erro: " + opcaoResult.getMessage());
-            return;
-        }
-        
+        Clube clube = null;
         switch (input.trim()) {
-            case "1":
-                Clube clube = clubeController.escolherClube(out, in);
+            case "1": {
+                clube = clubeController.escolherClube(out, in);
                 if (clube != null) {
-                    out.println("CPF: ");
-                    String cpf = in.readLine();
-                    ValidationResult cpfResult = Validator.validarCPF(cpf);
-                    if (!cpfResult.isValid()) {
-                        out.println("Erro: " + cpfResult.getMessage());
-                        break;
+                    String cpf = null;
+                    while (true) {
+                        out.println("CPF: ");
+                        cpf = in.readLine();
+                        ValidationResult cpfResult = Validator.validarCPF(cpf);
+                        if (!cpfResult.isValid()) {
+                            out.println("Erro: " + cpfResult.getMessage());
+                        } else {
+                            break;
+                        }
                     }
-                    
-                    out.println("Nome: ");
-                    String nome = in.readLine();
-                    ValidationResult nomeResult = Validator.validarNome(nome);
-                    if (!nomeResult.isValid()) {
-                        out.println("Erro: " + nomeResult.getMessage());
-                        break;
+                    String nome = null;
+                    while (true) {
+                        out.println("Nome: ");
+                        nome = in.readLine();
+                        ValidationResult nomeResult = Validator.validarNome(nome);
+                        if (!nomeResult.isValid()) {
+                            out.println("Erro: " + nomeResult.getMessage());
+                        } else {
+                            break;
+                        }
                     }
-                    
-                    out.println("Endereço: ");
-                    String endereco = in.readLine();
-                    ValidationResult enderecoResult = Validator.validarEndereco(endereco);
-                    if (!enderecoResult.isValid()) {
-                        out.println("Erro: " + enderecoResult.getMessage());
-                        break;
+                    String endereco = null;
+                    while (true) {
+                        out.println("Endereço: ");
+                        endereco = in.readLine();
+                        ValidationResult enderecoResult = Validator.validarEndereco(endereco);
+                        if (!enderecoResult.isValid()) {
+                            out.println("Erro: " + enderecoResult.getMessage());
+                        } else {
+                            break;
+                        }
                     }
-                    
-                    out.println("CTPS: ");
-                    String ctps = in.readLine();
-                    ValidationResult ctpsResult = Validator.validarCTPS(ctps);
-                    if (!ctpsResult.isValid()) {
-                        out.println("Erro: " + ctpsResult.getMessage());
-                        break;
+                    String ctps = null;
+                    while (true) {
+                        out.println("CTPS: ");
+                        ctps = in.readLine();
+                        ValidationResult ctpsResult = Validator.validarCTPS(ctps);
+                        if (!ctpsResult.isValid()) {
+                            out.println("Erro: " + ctpsResult.getMessage());
+                        } else {
+                            break;
+                        }
                     }
-                    
-                    out.println("Salário: ");
-                    String salarioStr = in.readLine();
-                    ValidationResult salarioResult = Validator.validarValorMonetario(salarioStr);
-                    if (!salarioResult.isValid()) {
-                        out.println("Erro: " + salarioResult.getMessage());
-                        break;
+                    String salarioStr = null;
+                    while (true) {
+                        out.println("Salário: ");
+                        salarioStr = in.readLine();
+                        ValidationResult salarioResult = Validator.validarValorMonetario(salarioStr);
+                        if (!salarioResult.isValid()) {
+                            out.println("Erro: " + salarioResult.getMessage());
+                        } else {
+                            break;
+                        }
                     }
-                    
                     try {
                         double salario = Double.parseDouble(salarioStr);
                         funcionarioController.criarFuncionario(clube, cpf, nome, endereco, ctps, salario);
@@ -473,6 +520,7 @@ public class Server {
                     }
                 }
                 break;
+            }
             case "2":
                 funcionarioController.listarTodosFuncionarios(out);
                 break;
@@ -490,7 +538,7 @@ public class Server {
                                 break;
                             }
                         }
-                        
+
                         out.println("Novo Nome (Enter para manter): ");
                         String nome = in.readLine();
                         if (!nome.trim().isEmpty()) {
@@ -500,7 +548,7 @@ public class Server {
                                 break;
                             }
                         }
-                        
+
                         out.println("Novo Endereço (Enter para manter): ");
                         String endereco = in.readLine();
                         if (!endereco.trim().isEmpty()) {
@@ -510,7 +558,7 @@ public class Server {
                                 break;
                             }
                         }
-                        
+
                         out.println("Nova CTPS (Enter para manter): ");
                         String ctps = in.readLine();
                         if (!ctps.trim().isEmpty()) {
@@ -520,7 +568,7 @@ public class Server {
                                 break;
                             }
                         }
-                        
+
                         out.println("Novo Salário (0 para manter): ");
                         String salarioStr = in.readLine();
                         if (!salarioStr.trim().isEmpty()) {
@@ -530,7 +578,7 @@ public class Server {
                                 break;
                             }
                         }
-                        
+
                         try {
                             double salario = salarioStr.isEmpty() ? 0 : Double.parseDouble(salarioStr);
                             funcionarioController.atualizarFuncionario(funcionario, cpf, nome, endereco, ctps, salario);
