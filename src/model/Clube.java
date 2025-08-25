@@ -35,7 +35,7 @@ public class Clube {
     }
 
     public List<Membro> getMembros() {
-        return new ArrayList<>(membros); // Retorna cópia para encapsulamento
+        return new ArrayList<>(membros);
     }
 
     public void addMembro(Membro membro) {
@@ -52,7 +52,7 @@ public class Clube {
     }
 
     public List<Funcionario> getFuncionarios() {
-        return new ArrayList<>(funcionarios); // Retorna cópia para encapsulamento
+        return new ArrayList<>(funcionarios);
     }
 
     public void addFuncionario(Funcionario funcionario) {

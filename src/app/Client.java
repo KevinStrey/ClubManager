@@ -8,81 +8,232 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
-    private static final String SERVER_ADDRESS = "127.0.0.1";
-    private static final int SERVER_PORT = 65000;
+    private static final String HOST = "localhost";
+    private static final int PORT = 12345;
 
     public static void main(String[] args) {
-        Scanner scan = new Scanner(System.in);
-        scan.useDelimiter("\n");
-        while (true) {
+        // Estabelece uma conexão com o servidor usando um Socket
+        try (Socket socket = new Socket(HOST, PORT);
+             // Cria BufferedReader para ler respostas do servidor
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             // Cria PrintWriter para enviar mensagens ao servidor, com autoFlush ativado
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+             Scanner sc = new Scanner(System.in)) {
 
-            Socket socket = null;
-            BufferedReader in = null;
-            PrintWriter out = null;
+            int opcao;
+            do {
+                System.out.println("\n===== MENU PRINCIPAL =====");
+                System.out.println("1. Clube");
+                System.out.println("2. Membro");
+                System.out.println("3. Funcionário");
+                System.out.println("0. Sair");
+                System.out.print("Escolha: ");
+                opcao = sc.nextInt();
+                sc.nextLine();
 
-            try {
-                socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
-                System.out.println("Conexão estabelecida com " + SERVER_ADDRESS + ":" + SERVER_PORT);
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                out = new PrintWriter(socket.getOutputStream(), true);
-                String serverResponse;
-                while ((serverResponse = in.readLine()) != null) {
-                    System.out.println(serverResponse);
-                    if (serverResponse.startsWith("Escolha uma opção:") ||
-                            serverResponse.startsWith("Nome do Clube:") ||
-                            serverResponse.startsWith("Valor da Mensalidade:") ||
-                            serverResponse.startsWith("CPF:") ||
-                            serverResponse.startsWith("Nome:") ||
-                            serverResponse.startsWith("Endereço:") ||
-                            serverResponse.startsWith("Matrícula:") ||
-                            serverResponse.startsWith("Plano:") ||
-                            serverResponse.startsWith("Escolha o Plano: 1. MENSAL | 2. SEMESTRAL | 3. ANUAL") ||
-                            serverResponse.startsWith("CTPS:") ||
-                            serverResponse.startsWith("Salário:") ||
-                            serverResponse.startsWith("Novo CPF") ||
-                            serverResponse.startsWith("Novo Nome") ||
-                            serverResponse.startsWith("Novo Endereço") ||
-                            serverResponse.startsWith("Nova Matrícula") ||
-                            serverResponse.startsWith("Novo Plano") ||
-                            serverResponse.startsWith("Nova CTPS") ||
-                            serverResponse.startsWith("Novo Salário") ||
-                            serverResponse.startsWith("Escolha o número do clube (0 para cancelar):") ||
-                            serverResponse.startsWith("Escolha o número do membro (0 para cancelar):") ||
-                            serverResponse.startsWith("Escolha o número do funcionario (0 para cancelar):") ||
-                            serverResponse.startsWith("Novo Valor Mensalidade (0 para manter)")) {
-                        System.out.print("Digite: ");
-                        String input = scan.nextLine();
-                        out.println(input);
-                        if (input.equals("exit")) {
-                            break;
-                        }
-                    }
-                    if (serverResponse.equals("Desconectando...")) {
-                        break;
-                    }
+                switch (opcao) {
+                    case 1 -> menuClube(sc, out, in);
+                    case 2 -> menuMembro(sc, out, in);
+                    case 3 -> menuFuncionario(sc, out, in);
                 }
-            } catch (IOException e) {
-                System.err.println("Erro ao conectar: " + e.getMessage());
-            } finally {
-                try {
-                    if (in != null)
-                        in.close();
-                    if (out != null)
-                        out.close();
-                    if (socket != null && !socket.isClosed()) {
-                        socket.close();
-                        System.out.println("Socket encerrado.");
-                    }
-                } catch (IOException e) {
-                    System.err.println("Erro ao fechar conexão: " + e.getMessage());
-                }
+            } while (opcao != 0);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void menuClube(Scanner sc, PrintWriter out, BufferedReader in) throws IOException {
+        System.out.println("\n--- MENU CLUBE ---");
+        System.out.println("1. Inserir");
+        System.out.println("2. Atualizar");
+        System.out.println("3. Remover");
+        System.out.println("4. Listar");
+        System.out.println("5. Listar Membros");
+        System.out.println("6. Listar Funcionários");
+        int op = sc.nextInt();
+        sc.nextLine();
+
+        String msg = "";
+        switch (op) {
+            case 1 -> {
+                System.out.print("Nome: ");
+                String nome = sc.nextLine();
+                System.out.print("Mensalidade: ");
+                double mensalidade = sc.nextDouble();
+                sc.nextLine();
+                msg = "INSERT;clube;" + nome + ";" + mensalidade;
             }
-            System.out.println("Deseja realizar outra operação? (s/n): ");
-            if (!scan.nextLine().equalsIgnoreCase("s")) {
-                break;
+            case 2 -> {
+                System.out.print("Nome do clube: ");
+                String nome = sc.nextLine();
+                System.out.print("Novo nome: ");
+                String novoNome = sc.nextLine();
+                System.out.print("Nova mensalidade: ");
+                double mensalidade = sc.nextDouble();
+                sc.nextLine();
+                msg = "UPDATE;clube;" + nome + ";" + novoNome + ";" + mensalidade;
+            }
+            case 3 -> {
+                System.out.print("Nome do clube: ");
+                String nome = sc.nextLine();
+                msg = "DELETE;clube;" + nome;
+            }
+            case 4 -> msg = "SELECT;clube";
+            case 5 -> {
+                System.out.print("Nome do clube: ");
+                String nome = sc.nextLine();
+                msg = "LIST_MEMBROS;clube;" + nome;
+            }
+            case 6 -> {
+                System.out.print("Nome do clube: ");
+                String nome = sc.nextLine();
+                msg = "LIST_FUNCIONARIOS;clube;" + nome;
             }
         }
-        scan.close();
-        System.out.println("Conexão encerrada!");
+        enviarMensagem(out, in, msg);
+    }
+
+    private static void menuMembro(Scanner sc, PrintWriter out, BufferedReader in) throws IOException {
+        System.out.println("\n--- MENU MEMBRO ---");
+        System.out.println("1. Inserir");
+        System.out.println("2. Atualizar");
+        System.out.println("3. Remover");
+        System.out.println("4. Listar");
+        int op = sc.nextInt();
+        sc.nextLine();
+
+        String msg = "";
+        switch (op) {
+            case 1 -> {
+                System.out.print("CPF: ");
+                String cpf = sc.nextLine();
+                System.out.print("Nome: ");
+                String nome = sc.nextLine();
+                System.out.print("Endereço: ");
+                String endereco = sc.nextLine();
+                System.out.print("Matrícula: ");
+                String matricula = sc.nextLine();
+                System.out.print("Plano (MENSAL/SEMESTRAL/ANUAL): ");
+                String plano = sc.nextLine();
+                System.out.print("Nome do clube: ");
+                String clubeNome = sc.nextLine();
+                msg = "INSERT;membro;" + cpf + ";" + nome + ";" + endereco + ";" + matricula + ";" + plano + ";" + clubeNome;
+            }
+            case 2 -> {
+                System.out.print("CPF: ");
+                String cpf = sc.nextLine();
+                System.out.print("Novo nome: ");
+                String nome = sc.nextLine();
+                System.out.print("Novo endereço: ");
+                String endereco = sc.nextLine();
+                System.out.print("Nova matrícula: ");
+                String matricula = sc.nextLine();
+                System.out.print("Novo plano (MENSAL/SEMESTRAL/ANUAL): ");
+                String plano = sc.nextLine();
+                System.out.print("Nome do clube: ");
+                String clubeNome = sc.nextLine();
+                msg = "UPDATE;membro;" + cpf + ";" + nome + ";" + endereco + ";" + matricula + ";" + plano + ";" + clubeNome;
+            }
+            case 3 -> {
+                System.out.print("CPF: ");
+                String cpf = sc.nextLine();
+                msg = "DELETE;membro;" + cpf;
+            }
+            case 4 -> msg = "SELECT;membro";
+        }
+        enviarMensagem(out, in, msg);
+    }
+
+    private static void menuFuncionario(Scanner sc, PrintWriter out, BufferedReader in) throws IOException {
+        System.out.println("\n--- MENU FUNCIONÁRIO ---");
+        System.out.println("1. Inserir");
+        System.out.println("2. Atualizar");
+        System.out.println("3. Remover");
+        System.out.println("4. Listar");
+        int op = sc.nextInt();
+        sc.nextLine();
+
+        String msg = "";
+        switch (op) {
+            case 1 -> {
+                System.out.print("CPF: ");
+                String cpf = sc.nextLine();
+                System.out.print("Nome: ");
+                String nome = sc.nextLine();
+                System.out.print("Endereço: ");
+                String endereco = sc.nextLine();
+                System.out.print("CTPS: ");
+                String ctps = sc.nextLine();
+                System.out.print("Salário: ");
+                String salario = sc.nextLine();
+                System.out.print("Nome do clube: ");
+                String clubeNome = sc.nextLine();
+                msg = "INSERT;funcionario;" + cpf + ";" + nome + ";" + endereco + ";" + ctps + ";" + salario + ";" + clubeNome;
+            }
+            case 2 -> {
+                System.out.print("CPF: ");
+                String cpf = sc.nextLine();
+                System.out.print("Novo nome: ");
+                String nome = sc.nextLine();
+                System.out.print("Novo endereço: ");
+                String endereco = sc.nextLine();
+                System.out.print("Novo CTPS: ");
+                String ctps = sc.nextLine();
+                System.out.print("Novo salário: ");
+                String salario = sc.nextLine();
+                System.out.print("Nome do clube: ");
+                String clubeNome = sc.nextLine();
+                msg = "UPDATE;funcionario;" + cpf + ";" + nome + ";" + endereco + ";" + ctps + ";" + salario + ";" + clubeNome;
+            }
+            case 3 -> {
+                System.out.print("CPF: ");
+                String cpf = sc.nextLine();
+                msg = "DELETE;funcionario;" + cpf;
+            }
+            case 4 -> msg = "SELECT;funcionario";
+        }
+        enviarMensagem(out, in, msg);
+    }
+
+    // Método que envia uma mensagem ao servidor e lê a resposta
+    private static void enviarMensagem(PrintWriter out, BufferedReader in, String msg) throws IOException {
+       
+    	// Log da mensagem enviada para depuração
+        System.out.println("Enviando: " + msg);
+        
+        // Limpa quaisquer dados obsoletos no fluxo de entrada
+        while (in.ready()) {
+            System.out.println("Descartando dados obsoletos: " + in.readLine());
+        }
+        
+        // Envia a mensagem ao servidor (println() com autoFlush=true envia imediatamente)
+        out.println(msg);
+        
+        // Lê a resposta do servidor
+        StringBuilder resposta = new StringBuilder();
+        
+        String line;
+        
+        // Para INSERT, UPDATE, DELETE, espera uma única linha de resposta
+        if (msg.startsWith("INSERT") || msg.startsWith("UPDATE") || msg.startsWith("DELETE")) {
+            line = in.readLine();
+            if (line != null) {
+                resposta.append(line);
+            }
+        } else {
+            // Para SELECT, LIST_MEMBROS, LIST_FUNCIONARIOS, lê enquanto houverem linhas disponíveis
+            line = in.readLine();
+            if (line != null) {
+                resposta.append(line).append("\n");
+                while (in.ready() && (line = in.readLine()) != null) {
+                    resposta.append(line).append("\n");
+                }
+            }
+        }
+        
+        // Exibe a resposta do servidor, ou mensagem padrão se não houver resposta
+        String respostaFinal = resposta.length() > 0 ? resposta.toString().trim() : "Nenhuma resposta recebida";
+        System.out.println("Servidor: " + respostaFinal);
     }
 }
